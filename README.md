@@ -7,7 +7,7 @@ In addition to this we try other models and configurations and compare the resul
 
 <img src="https://github.com/EbsHirani/Word-Level-SignLanguage-Translation/blob/main/images/results.jpg" alt="results" width="400"/>
 <br/>
-In addition to this, we create a pipeline that takes in a video and outputs a sentence and deploy it a Flask API.<br/><br/>
+We create a pipeline that takes in a video and outputs a sentence and deploy it a Flask API.<br/><br/>
 
 ![alt text](https://github.com/EbsHirani/Word-Level-SignLanguage-Translation/blob/main/images/Screenshot%201.jpg)<br/>
 ![alt text](https://github.com/EbsHirani/Word-Level-SignLanguage-Translation/blob/main/images/Screenshot%202.jpg)
