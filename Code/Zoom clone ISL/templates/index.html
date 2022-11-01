@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+        <script src="https://cdn.socket.io/4.5.0/socket.io.min.js" integrity="sha384-7EyYLQZgWBi67fBtVxw60/OWl1kjsfrPFcaU0pp0nAh+i8FD068QogUvg85Ewy1k" crossorigin="anonymous"></script>
+    </head>
+    <body>
+        <script>
+            function opencvIsReady() {
+              console.log( 'OpenCV Ready', cv);
+            }
+        </script>
+        <script async src="https://huningxin.github.io/opencv.js/build/asm.js/opencv.js" onload="opencvIsReady()"></script>
+
+        <script>
+            function capture(video, scaleFactor) {
+                if(scaleFactor == null){
+                    scaleFactor = 1;
+                }
+                var w = video.videoWidth * scaleFactor;
+                var h = video.videoHeight * scaleFactor;
+                var canvas = document.createElement('canvas');
+                    canvas.width  = w;
+                    canvas.height = h;
+                var ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, w, h);
+                return canvas;
+            }
+            function detect() {
+
+                 
+                var socket = io('http://localhost:5000');
+                // var socket = io('https://5ad1-27-58-244-151.in.ngrok.io ');
+
+                socket.on('connect', function(){
+                    console.log("Connected...!", socket.connected)
+                });
+
+                // const video = document.querySelector("#videoElement");
+                let video = document.getElementById('local').firstChild.firstChild;
+                console.log(video);
+
+                video.width = 500; 
+                video.height = 375;
+
+                if (navigator.mediaDevices.getUserMedia) {
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function (stream) {
+                        console.log("Inside");
+                        video.srcObject = stream;
+                        video.play();
+                    })
+                    .catch(function (err0r) {
+                        console.log(err0r)
+                        console.log("Something went wrong!");
+                    });
+                }
+
+                let src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+                let dst = new cv.Mat(video.height, video.width, cv.CV_8UC1);
+                let cap = new cv.VideoCapture(video);
+
+                const FPS = 22;
+
+                setInterval(() => {
+                    console.log("READING");
+                    cap.read(src);
+
+                    var type = "image/jpg"
+                    var frame = capture(video, 1)
+                    var data = frame.toDataURL(type);
+                    console.log("DATA,",data);
+                    data = data.replace('data:' + type + ';base64,', ''); //split off junk at the beginning
+
+                    socket.emit('image', data);
+                }, 10000/FPS);
+
+
+                socket.on('response_back', function(image){
+                    console.log("RESPONSE RECEIVED");
+                    const image_id = document.getElementById('image');
+                    image_id.src = image;
+                });
+                socket.on('response_back_text', function(text){
+                    const t = document.getElementById('text_shown');
+                    t.innerHTML = text;
+                });
+            }
+        </script>
+        <h1>Flask & Twilio Video Conference</h1>
+        <form>
+            <label for="username">Name: </label>
+            <input type="text" name=”username” id="username">
+            <button id="join_leave">Join call</button>
+            <button id="share_screen" disabled>Share screen</button>
+            <button id="toggle_chat" disabled>Toggle chat</button>
+        </form>
+        <p id="count">Disconnected.</p>
+        <button id="sign" onclick="detect()">Detect Signs</button>
+        <div class = 'video'>
+            <img id="image">
+            <p id = "text_shown"></p>
+        </div>
+        <div id="root">
+            <div id="container" class="container">
+                <div id="local" class="participant"><div></div><div class="label">Me</div></div>
+                <!-- more participants will be added dynamically here -->
+            </div>
+            <div id="chat">
+                <div id="chat-scroll">
+                    <div id="chat-content">
+                        <!-- chat content will be added dynamically here -->
+                    </div>
+                </div>
+                <input id="chat-input" type="text">
+            </div>
+        </div>
+        <canvas id="canvasOutput"></canvas>
+        <script src="https://media.twiliocdn.com/sdk/js/video/releases/2.3.0/twilio-video.min.js"></script>
+        <script src="https://media.twiliocdn.com/sdk/js/conversations/releases/1.0.0/twilio-conversations.min.js"></script>
+        <script src="{{ url_for('static', filename='app.js') }}"></script>
+    </body>
+</html>
